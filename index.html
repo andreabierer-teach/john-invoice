@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a56db">
+  <title>GapCap Invoice Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-page="tracker" aria-label="Kit Tracker">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/><path d="M9 14l2 2 4-4"/></svg>
+      <span>Tracker</span>
+    </button>
+    <button class="nav-btn" data-page="new-invoice" aria-label="New Invoice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+      <span>New Invoice</span>
+    </button>
+    <button class="nav-btn" data-page="settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- Page: Kit Tracker (Main Dashboard) -->
+  <div id="page-tracker" class="page active">
+    <header class="page-header">
+      <h1>Kit Tracker</h1>
+    </header>
+
+    <!-- Summary Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Total Kits</span>
+        <span class="stat-value" id="stat-kits">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Total Invoiced</span>
+        <span class="stat-value" id="stat-invoiced">$0.00</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Total Paid</span>
+        <span class="stat-value stat-paid" id="stat-paid">$0.00</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Outstanding</span>
+        <span class="stat-value" id="stat-outstanding">$0.00</span>
+      </div>
+    </div>
+
+    <!-- Invoice List -->
+    <div class="invoice-list" id="invoice-list">
+      <div class="empty-state" id="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><path d="M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <p>No invoices yet</p>
+        <p class="empty-hint">Tap "New Invoice" to create your first one!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page: New Invoice -->
+  <div id="page-new-invoice" class="page">
+    <header class="page-header">
+      <h1 id="invoice-form-title">New Invoice</h1>
+    </header>
+
+    <form id="invoice-form" class="form">
+      <input type="hidden" id="edit-invoice-id" value="">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="inv-number">Invoice #</label>
+          <input type="number" id="inv-number" required min="1">
+        </div>
+        <div class="form-group">
+          <label for="inv-date">Invoice Date</label>
+          <input type="date" id="inv-date" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="inv-description">Description</label>
+        <input type="text" id="inv-description" readonly>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="inv-kits">Number of Kits</label>
+          <input type="number" id="inv-kits" required min="1" placeholder="Enter # of kits">
+        </div>
+        <div class="form-group">
+          <label for="inv-rate">Rate Per Kit</label>
+          <input type="text" id="inv-rate" readonly>
+        </div>
+      </div>
+
+      <div class="form-group total-display">
+        <label>Total Amount</label>
+        <div class="total-amount" id="inv-total">$0.00</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="inv-how-sent">How Sent</label>
+          <select id="inv-how-sent">
+            <option value="">-- Not sent yet --</option>
+            <option value="Email">Email</option>
+            <option value="Mail">Mail</option>
+            <option value="Hand Delivered">Hand Delivered</option>
+            <option value="Text">Text</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="inv-date-paid">Date Paid</label>
+          <input type="date" id="inv-date-paid">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="inv-notes">Notes</label>
+        <textarea id="inv-notes" rows="2" placeholder="Optional notes..."></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="btn-save-invoice">Save Invoice</button>
+        <button type="button" class="btn btn-secondary" id="btn-preview-invoice">Preview & Print</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Page: Settings -->
+  <div id="page-settings" class="page">
+    <header class="page-header">
+      <h1>Settings</h1>
+    </header>
+
+    <form id="settings-form" class="form">
+      <h2 class="form-section-title">Your Information</h2>
+      <div class="form-group">
+        <label for="set-name">Full Name</label>
+        <input type="text" id="set-name" required>
+      </div>
+      <div class="form-group">
+        <label for="set-address">Address</label>
+        <input type="text" id="set-address">
+      </div>
+      <div class="form-group">
+        <label for="set-city-state-zip">City, State ZIP</label>
+        <input type="text" id="set-city-state-zip">
+      </div>
+      <div class="form-group">
+        <label for="set-phone">Phone</label>
+        <input type="tel" id="set-phone">
+      </div>
+      <div class="form-group">
+        <label for="set-email">Email</label>
+        <input type="email" id="set-email">
+      </div>
+
+      <h2 class="form-section-title">Bill To</h2>
+      <div class="form-group">
+        <label for="set-bill-company">Company Name</label>
+        <input type="text" id="set-bill-company">
+      </div>
+      <div class="form-group">
+        <label for="set-bill-attention">Attention</label>
+        <input type="text" id="set-bill-attention">
+      </div>
+      <div class="form-group">
+        <label for="set-bill-address">Address</label>
+        <input type="text" id="set-bill-address">
+      </div>
+      <div class="form-group">
+        <label for="set-bill-city-state-zip">City, State ZIP</label>
+        <input type="text" id="set-bill-city-state-zip">
+      </div>
+      <div class="form-group">
+        <label for="set-bill-email">Email</label>
+        <input type="email" id="set-bill-email">
+      </div>
+
+      <h2 class="form-section-title">Invoice Defaults</h2>
+      <div class="form-group">
+        <label for="set-rate">Rate Per Kit ($)</label>
+        <input type="number" id="set-rate" step="0.01" min="0">
+      </div>
+      <div class="form-group">
+        <label for="set-description">Default Kit Description</label>
+        <input type="text" id="set-description">
+      </div>
+      <div class="form-group">
+        <label for="set-terms">Payment Terms</label>
+        <input type="text" id="set-terms">
+      </div>
+      <div class="form-group">
+        <label for="set-next-invoice">Next Invoice Number</label>
+        <input type="number" id="set-next-invoice" min="1">
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Invoice Preview Modal (for print/PDF) -->
+  <div id="invoice-preview-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-actions no-print">
+        <button class="btn btn-secondary" id="btn-close-preview">Close</button>
+        <button class="btn btn-primary" id="btn-print">Print / Save PDF</button>
+        <button class="btn btn-email" id="btn-email-invoice">Email Invoice</button>
+      </div>
+      <div id="invoice-preview" class="invoice-preview">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Invoice Modal for tracker rows -->
+  <div id="edit-modal" class="modal hidden">
+    <div class="modal-content edit-modal-content">
+      <h2 id="edit-modal-title">Update Invoice</h2>
+      <form id="edit-tracker-form" class="form">
+        <input type="hidden" id="edit-tracker-id" value="">
+        <div class="form-group">
+          <label for="edit-how-sent">How Sent</label>
+          <select id="edit-how-sent">
+            <option value="">-- Not sent yet --</option>
+            <option value="Email">Email</option>
+            <option value="Mail">Mail</option>
+            <option value="Hand Delivered">Hand Delivered</option>
+            <option value="Text">Text</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-date-paid">Date Paid</label>
+          <input type="date" id="edit-date-paid">
+        </div>
+        <div class="form-group">
+          <label for="edit-notes">Notes</label>
+          <textarea id="edit-notes" rows="2"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update</button>
+          <button type="button" class="btn btn-danger" id="btn-delete-invoice">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
