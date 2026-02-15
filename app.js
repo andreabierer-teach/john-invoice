@@ -199,7 +199,82 @@
     invDatePaid.value = '';
     invNotes.value = '';
     invNumber.readOnly = false;
+
+    // Show send info
+    var sendInfo = document.getElementById('send-info-from-form');
+    if (settings.billEmail) {
+      sendInfo.innerHTML = 'Email will send to: <strong>' + escHtml(settings.billEmail) + '</strong>';
+    } else {
+      sendInfo.innerHTML = '<span class="warning">No Bill To email set — go to Settings to add one</span>';
+    }
   }
+
+  // Helper: build invoice message text from current form
+  function getInvoiceMessageText() {
+    var kits = parseInt(invKits.value) || 0;
+    var invNum = invNumber.value;
+    var total = formatCurrency(kits * settings.rate);
+
+    return 'Invoice #' + invNum + ' from ' + settings.name + '\n\n' +
+      'Description: ' + (invDescription.value || settings.description) + '\n' +
+      'Number of Kits: ' + kits + '\n' +
+      'Rate: ' + formatCurrency(settings.rate) + ' per kit\n' +
+      'Total Due: ' + total + '\n\n' +
+      'Payment Terms: ' + settings.terms + '\n\n' +
+      'Please make checks payable to ' + settings.name + ' or send payment via email to ' + settings.email + '.\n\n' +
+      'Thank you!\n' + settings.name;
+  }
+
+  // Email Invoice from form page
+  document.getElementById('btn-email-from-form').addEventListener('click', function () {
+    var kits = parseInt(invKits.value) || 0;
+    if (!kits || kits < 1) {
+      showToast('Enter the number of kits first');
+      invKits.focus();
+      return;
+    }
+
+    var recipient = settings.billEmail || '';
+    if (!recipient) {
+      showToast('Set a Bill To email in Settings first!');
+      return;
+    }
+
+    var invNum = invNumber.value;
+    var total = formatCurrency(kits * settings.rate);
+    var subject = encodeURIComponent('Invoice #' + invNum + ' from ' + settings.name + ' - ' + total);
+    var body = encodeURIComponent(getInvoiceMessageText());
+
+    var gmailUrl = 'https://mail.google.com/mail/?view=cm&to=' + encodeURIComponent(recipient) + '&su=' + subject + '&body=' + body;
+    var mailtoUrl = 'mailto:' + encodeURIComponent(recipient) + '?subject=' + subject + '&body=' + body;
+
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      window.location.href = mailtoUrl;
+    } else {
+      window.open(gmailUrl, '_blank');
+    }
+    showToast('Opening email to ' + recipient);
+  });
+
+  // Text Invoice from form page
+  document.getElementById('btn-text-from-form').addEventListener('click', function () {
+    var kits = parseInt(invKits.value) || 0;
+    if (!kits || kits < 1) {
+      showToast('Enter the number of kits first');
+      invKits.focus();
+      return;
+    }
+
+    var message = encodeURIComponent(getInvoiceMessageText());
+
+    // sms: works on both iPhone and Android
+    // iPhone uses &body=, Android uses ?body=
+    var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    var smsUrl = isIOS ? 'sms:&body=' + message : 'sms:?body=' + message;
+
+    window.location.href = smsUrl;
+    showToast('Opening text message...');
+  });
 
   // Calculate total on kit count change
   invKits.addEventListener('input', function () {
