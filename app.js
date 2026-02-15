@@ -269,7 +269,9 @@
       total: kits * settings.rate
     };
 
+    currentPreviewData = data;
     renderInvoicePreview(data);
+    updateEmailRecipientInfo();
     previewModal.classList.remove('hidden');
   });
 
@@ -350,12 +352,29 @@
     window.print();
   });
 
+  // Show email recipient info when preview opens
+  function updateEmailRecipientInfo() {
+    var recipientInfo = document.getElementById('email-recipient-info');
+    if (settings.billEmail) {
+      recipientInfo.textContent = 'Email will be sent to: ' + settings.billEmail;
+    } else {
+      recipientInfo.innerHTML = '<span style="color:#dc2626;">No "Bill To" email set! Go to Settings to add one.</span>';
+    }
+  }
+
   // Email invoice
   btnEmailInvoice.addEventListener('click', function () {
-    var kits = parseInt(invKits.value) || 0;
-    var invNum = invNumber.value;
-    var total = formatCurrency(kits * settings.rate);
     var recipient = settings.billEmail || '';
+
+    if (!recipient) {
+      showToast('Set a Bill To email in Settings first!');
+      return;
+    }
+
+    // Use the currently displayed preview data
+    var invNum = currentPreviewData ? currentPreviewData.number : '';
+    var kits = currentPreviewData ? currentPreviewData.kits : 0;
+    var total = currentPreviewData ? formatCurrency(currentPreviewData.total) : '$0.00';
 
     var subject = encodeURIComponent('Invoice #' + invNum + ' from ' + settings.name + ' - ' + total);
     var body = encodeURIComponent(
@@ -382,8 +401,11 @@
       window.open(gmailUrl, '_blank');
     }
 
-    showToast('Opening email...');
+    showToast('Opening email to ' + recipient);
   });
+
+  // Track current preview data for email
+  var currentPreviewData = null;
 
   // --- Kit Tracker ---
   function renderTracker() {
@@ -497,6 +519,28 @@
 
   btnCancelEdit.addEventListener('click', function () {
     editModal.classList.add('hidden');
+  });
+
+  // View / Print invoice from the tracker edit modal
+  document.getElementById('btn-view-invoice-from-tracker').addEventListener('click', function () {
+    var id = editTrackerId.value;
+    var inv = invoices.find(function (i) { return i.id === id; });
+    if (!inv) return;
+
+    var data = {
+      number: inv.number,
+      date: inv.date,
+      description: inv.description || settings.description,
+      kits: inv.kits,
+      rate: inv.rate,
+      total: inv.total
+    };
+
+    currentPreviewData = data;
+    editModal.classList.add('hidden');
+    renderInvoicePreview(data);
+    updateEmailRecipientInfo();
+    previewModal.classList.remove('hidden');
   });
 
   btnDeleteInvoice.addEventListener('click', function () {

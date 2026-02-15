@@ -217,6 +217,7 @@
         <button class="btn btn-secondary" id="btn-close-preview">Close</button>
         <button class="btn btn-primary" id="btn-print">Print / Save PDF</button>
         <button class="btn btn-email" id="btn-email-invoice">Email Invoice</button>
+        <div class="email-recipient" id="email-recipient-info"></div>
       </div>
       <div id="invoice-preview" class="invoice-preview">
         <!-- Filled by JS -->
@@ -252,6 +253,9 @@
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
           <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+        <div class="form-actions" style="margin-top:4px;">
+          <button type="button" class="btn btn-email" id="btn-view-invoice-from-tracker">View / Print Invoice</button>
           <button type="button" class="btn btn-danger" id="btn-delete-invoice">Delete</button>
         </div>
       </form>
