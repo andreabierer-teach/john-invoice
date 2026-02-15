@@ -1,5 +1,5 @@
 // Service Worker for GapCap Invoice Tracker PWA
-var CACHE_NAME = 'gapcap-v1';
+var CACHE_NAME = 'gapcap-v2';
 var urlsToCache = [
   '/',
   '/index.html',

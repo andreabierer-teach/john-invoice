@@ -200,13 +200,51 @@
     invNotes.value = '';
     invNumber.readOnly = false;
 
+    // Hide delete button (only show when editing)
+    document.getElementById('edit-mode-actions').classList.add('hidden');
+
     // Show send info
+    updateFormSendInfo();
+  }
+
+  function updateFormSendInfo() {
     var sendInfo = document.getElementById('send-info-from-form');
     if (settings.billEmail) {
       sendInfo.innerHTML = 'Email will send to: <strong>' + escHtml(settings.billEmail) + '</strong>';
     } else {
       sendInfo.innerHTML = '<span class="warning">No Bill To email set — go to Settings to add one</span>';
     }
+  }
+
+  // Load an existing invoice into the form for editing
+  function loadInvoiceForEditing(invoiceId) {
+    var inv = invoices.find(function (i) { return i.id === invoiceId; });
+    if (!inv) return;
+
+    editInvoiceId.value = inv.id;
+    invoiceFormTitle.textContent = 'Edit Invoice #' + inv.number;
+    btnSaveInvoice.textContent = 'Update Invoice';
+    invNumber.value = inv.number;
+    invDate.value = inv.date;
+    invDescription.value = inv.description || settings.description;
+    invRate.value = formatCurrency(inv.rate);
+    invKits.value = inv.kits;
+    invTotal.textContent = formatCurrency(inv.total);
+    invHowSent.value = inv.howSent || '';
+    invDatePaid.value = inv.datePaid || '';
+    invNotes.value = inv.notes || '';
+    invNumber.readOnly = false;
+
+    // Show delete button when editing
+    document.getElementById('edit-mode-actions').classList.remove('hidden');
+
+    updateFormSendInfo();
+
+    // Switch to the invoice form page
+    pages.forEach(function (p) { p.classList.remove('active'); });
+    navBtns.forEach(function (b) { b.classList.remove('active'); });
+    document.getElementById('page-new-invoice').classList.add('active');
+    document.querySelector('[data-page="new-invoice"]').classList.add('active');
   }
 
   // Helper: build invoice message text from current form
@@ -274,6 +312,160 @@
 
     window.location.href = smsUrl;
     showToast('Opening text message...');
+  });
+
+  // --- Share Invoice as Image ---
+  // Creates the invoice image and uses Web Share API or fallback download
+  function generateInvoiceImage(callback) {
+    // First make sure the preview is rendered (even if hidden)
+    var kits = parseInt(invKits.value) || 0;
+    if (!kits || kits < 1) {
+      showToast('Enter the number of kits first');
+      invKits.focus();
+      return;
+    }
+
+    var data = {
+      number: parseInt(invNumber.value),
+      date: invDate.value,
+      description: invDescription.value || settings.description,
+      kits: kits,
+      rate: settings.rate,
+      total: kits * settings.rate
+    };
+
+    // Render the preview into the hidden element
+    renderInvoicePreview(data);
+
+    // We need the preview visible for html2canvas to work
+    var previewEl = document.getElementById('invoice-preview');
+    var modal = document.getElementById('invoice-preview-modal');
+    var wasHidden = modal.classList.contains('hidden');
+
+    // Temporarily show if hidden (off-screen trick)
+    if (wasHidden) {
+      modal.style.position = 'fixed';
+      modal.style.left = '-9999px';
+      modal.classList.remove('hidden');
+    }
+
+    showToast('Creating invoice image...');
+
+    html2canvas(previewEl, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    }).then(function (canvas) {
+      // Restore modal state
+      if (wasHidden) {
+        modal.classList.add('hidden');
+        modal.style.position = '';
+        modal.style.left = '';
+      }
+
+      canvas.toBlob(function (blob) {
+        var fileName = 'Invoice-' + data.number + '-' + settings.name.replace(/\s/g, '-') + '.png';
+        var file = new File([blob], fileName, { type: 'image/png' });
+        callback(file, blob, fileName, data);
+      }, 'image/png');
+    }).catch(function (err) {
+      if (wasHidden) {
+        modal.classList.add('hidden');
+        modal.style.position = '';
+        modal.style.left = '';
+      }
+      showToast('Error creating image. Try Print instead.');
+    });
+  }
+
+  function shareInvoiceImage() {
+    generateInvoiceImage(function (file, blob, fileName, data) {
+      // Try Web Share API first (works on phones)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+          title: 'Invoice #' + data.number,
+          text: 'Invoice #' + data.number + ' from ' + settings.name + ' - ' + formatCurrency(data.total),
+          files: [file]
+        }).then(function () {
+          showToast('Invoice shared!');
+        }).catch(function (err) {
+          if (err.name !== 'AbortError') {
+            // User cancelled, that's fine
+            downloadInvoiceBlob(blob, fileName);
+          }
+        });
+      } else {
+        // Fallback: download the image
+        downloadInvoiceBlob(blob, fileName);
+      }
+    });
+  }
+
+  function downloadInvoiceBlob(blob, fileName) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Invoice image downloaded!');
+  }
+
+  // Share from the invoice form page
+  document.getElementById('btn-share-from-form').addEventListener('click', function () {
+    shareInvoiceImage();
+  });
+
+  // Share from the preview modal
+  document.getElementById('btn-share-preview').addEventListener('click', function () {
+    var previewEl = document.getElementById('invoice-preview');
+
+    showToast('Creating invoice image...');
+
+    html2canvas(previewEl, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    }).then(function (canvas) {
+      canvas.toBlob(function (blob) {
+        var invNum = currentPreviewData ? currentPreviewData.number : 'X';
+        var fileName = 'Invoice-' + invNum + '-' + settings.name.replace(/\s/g, '-') + '.png';
+        var file = new File([blob], fileName, { type: 'image/png' });
+
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({
+            title: 'Invoice #' + invNum,
+            text: 'Invoice #' + invNum + ' from ' + settings.name + ' - ' + (currentPreviewData ? formatCurrency(currentPreviewData.total) : ''),
+            files: [file]
+          }).then(function () {
+            showToast('Invoice shared!');
+          }).catch(function (err) {
+            if (err.name !== 'AbortError') {
+              downloadInvoiceBlob(blob, fileName);
+            }
+          });
+        } else {
+          downloadInvoiceBlob(blob, fileName);
+        }
+      }, 'image/png');
+    }).catch(function () {
+      showToast('Error creating image. Try Print instead.');
+    });
+  });
+
+  // Delete invoice from the edit form
+  document.getElementById('btn-delete-from-form').addEventListener('click', function () {
+    var id = editInvoiceId.value;
+    if (!id) return;
+    if (!confirm('Delete this invoice? This cannot be undone.')) return;
+    invoices = invoices.filter(function (i) { return i.id !== id; });
+    saveInvoices(invoices);
+    showToast('Invoice deleted');
+    switchPage('tracker');
   });
 
   // Calculate total on kit count change
@@ -557,7 +749,7 @@
         '</div>';
 
       card.addEventListener('click', function () {
-        openEditModal(inv.id);
+        loadInvoiceForEditing(inv.id);
       });
 
       invoiceList.appendChild(card);

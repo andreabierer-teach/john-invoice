@@ -403,12 +403,12 @@ body {
 }
 
 .btn-text {
-  background: #2563eb;
+  background: #6366f1;
   color: #fff;
 }
 
 .btn-text:active {
-  background: #1d4ed8;
+  background: #4f46e5;
 }
 
 .btn-danger {

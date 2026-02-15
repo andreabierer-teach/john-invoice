@@ -10,6 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
   <!-- Navigation -->
@@ -133,8 +134,12 @@
         <button type="button" class="btn btn-secondary" id="btn-preview-invoice">Preview & Print</button>
       </div>
       <div class="form-actions" style="margin-top: 4px;">
-        <button type="button" class="btn btn-email" id="btn-email-from-form">Email Invoice</button>
-        <button type="button" class="btn btn-text" id="btn-text-from-form">Text Invoice</button>
+        <button type="button" class="btn btn-email" id="btn-share-from-form">Share Invoice (Image)</button>
+        <button type="button" class="btn btn-text" id="btn-email-from-form">Email Invoice</button>
+        <button type="button" class="btn btn-secondary" id="btn-text-from-form">Text Invoice</button>
+      </div>
+      <div class="form-actions hidden" id="edit-mode-actions" style="margin-top: 4px;">
+        <button type="button" class="btn btn-danger" id="btn-delete-from-form">Delete This Invoice</button>
       </div>
       <div class="send-info" id="send-info-from-form"></div>
     </form>
@@ -221,7 +226,8 @@
       <div class="modal-actions no-print">
         <button class="btn btn-secondary" id="btn-close-preview">Close</button>
         <button class="btn btn-primary" id="btn-print">Print / Save PDF</button>
-        <button class="btn btn-email" id="btn-email-invoice">Email Invoice</button>
+        <button class="btn btn-email" id="btn-share-preview">Share Invoice (Image)</button>
+        <button class="btn btn-email" id="btn-email-invoice" style="background:#2563eb;">Email Text Only</button>
         <div class="email-recipient" id="email-recipient-info"></div>
       </div>
       <div id="invoice-preview" class="invoice-preview">
